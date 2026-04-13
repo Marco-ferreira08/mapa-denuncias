@@ -68,6 +68,7 @@ uvicorn app.main:app --reload
 Abra o arquivo `index.html` com Live Server ou qualquer servidor local.
 
 ## 🗄️ Estrutura do projeto
+
 mapa-denuncias/
 ├── app/
 │   ├── init.py
