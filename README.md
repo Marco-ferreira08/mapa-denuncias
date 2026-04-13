@@ -86,3 +86,12 @@ Este projeto nasceu da necessidade de dar voz aos cidadãos. Qualquer pessoa pod
 ## 📄 Licença
 
 MIT
+
+** Imagens
+
+<img width="573" height="297" alt="image" src="https://github.com/user-attachments/assets/de869ff0-c6bf-41b8-afb9-a6554286c2e8" />
+
+<img width="474" height="479" alt="image" src="https://github.com/user-attachments/assets/8d0ade84-5ea2-4cd1-a004-ab709b9d7aed" />
+
+<img width="705" height="379" alt="image" src="https://github.com/user-attachments/assets/b2602ad1-2658-4f28-b8fb-ab071fe290a4" />
+
