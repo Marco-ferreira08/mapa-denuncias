@@ -20,8 +20,6 @@ Plataforma colaborativa onde moradores podem reportar problemas urbanos — bura
 | Autenticação | Supabase Auth (Google OAuth) |
 | Upload de fotos | Cloudinary |
 | Mapa | OpenStreetMap (gratuito, sem chave de API) |
-| Deploy backend | Render |
-| Deploy frontend | Vercel |
 
 ## 🚀 Como rodar localmente
 
