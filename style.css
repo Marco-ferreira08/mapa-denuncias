@@ -1,0 +1,97 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: sans-serif;
+}
+
+#map {
+    height: 100vh;
+    width: 100%;
+}
+
+#btn-denunciar {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+#modal.open {
+    display: flex;
+}
+
+#modal-box {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    width: 90%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#modal-box h2 {
+    font-size: 18px;
+}
+
+#modal-box input,
+#modal-box select,
+#modal-box textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+#modal-box textarea {
+    resize: vertical;
+    height: 80px;
+}
+
+#modal-box button {
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+#btn-enviar {
+    background: #e53e3e;
+    color: white;
+}
+
+#btn-cancelar {
+    background: #eee;
+    color: #333;
+}
+
+#status-msg {
+    font-size: 13px;
+    color: #666;
+    text-align: center;
+}
