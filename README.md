@@ -1,6 +1,6 @@
 # 🗺️ Mapa Denúncias Urbanas
 
-Plataforma colaborativa onde moradores podem reportar problemas urbanos — buracos, iluminação quebrada, alagamentos, lixo irregular — diretamente no mapa da sua cidade.
+Plataforma colaborativa onde moradores podem reportar problemas urbanos: buracos, iluminação quebrada, alagamentos, lixo irregular, diretamente no mapa da sua cidade.
 
 ## ✨ Funcionalidades
 
