@@ -7,10 +7,12 @@
     <title>Mapa Denúncias</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css" />
+
 </head>
 
 <body>
-
+    <a href="dashboard.html" id="btn-dashboard"
+        style="display:none; position:absolute; top:16px; right:180px; z-index:1000; background:white; color:#e53e3e; border:1.5px solid #e53e3e; padding:10px 16px; border-radius:8px; font-size:14px; font-weight:500; text-decoration:none;">Dashboard</a>
     <div id="map"></div>
     <button id="btn-denunciar" onclick="abrirModal()">+ Nova denúncia</button>
 
