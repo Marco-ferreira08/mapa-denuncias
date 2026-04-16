@@ -73,7 +73,9 @@ async function abrirModal() {
     }
     document.getElementById("modal").classList.add("open")
 }
-
+client.auth.getSession().then(({ data: { session } }) => {
+    if (session) document.getElementById("btn-dashboard").style.display = "block"
+})
 function fecharModal() {
     document.getElementById("modal").classList.remove("open")
 }
