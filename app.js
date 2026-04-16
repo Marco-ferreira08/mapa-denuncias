@@ -21,10 +21,26 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 let userPos = null
 
-navigator.geolocation.getCurrentPosition(pos => {
-    userPos = [pos.coords.latitude, pos.coords.longitude]
-    map.setView(userPos, 15)
-})
+function pedirLocalizacao() {
+    if (!navigator.geolocation) {
+        alert("Seu navegador não suporta geolocalização.")
+        return
+    }
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            userPos = [pos.coords.latitude, pos.coords.longitude]
+            map.setView(userPos, 15)
+        },
+        erro => {
+            if (erro.code === 1) {
+                alert("Permissão de localização negada. Ative nas configurações do navegador para registrar denúncias.")
+            }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    )
+}
+
+pedirLocalizacao()
 
 async function carregarDenuncias() {
     const res = await fetch(`${API_URL}/reports`)
