@@ -13,6 +13,120 @@ const ADMINS = ["ferreiramarcoantonio904@gmail.com"]
 const statusLabel = { aberto: "Pendente", em_andamento: "Em progresso", resolvido: "Atendido" }
 const statusBadge = { aberto: "badge-pending", em_andamento: "badge-progress", resolvido: "badge-done" }
 const catLabel = { buraco: "Buraco", iluminacao: "Iluminação", lixo: "Lixo", alagamento: "Alagamento", outro: "Outro" }
+const catEmoji = { buraco: "🕳️", iluminacao: "💡", lixo: "🗑️", alagamento: "🌊", outro: "📍" }
+
+// =========================================
+// Toast notification system
+// =========================================
+
+function showToast(message, type = "info", duration = 3500) {
+    const container = document.getElementById("toast-container")
+    if (!container) return
+    const toast = document.createElement("div")
+    toast.className = `toast toast-${type}`
+
+    const icons = { success: "✓", error: "✕", info: "ℹ", warning: "⚠" }
+
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <span class="toast-msg">${message}</span>
+    `
+    container.appendChild(toast)
+    requestAnimationFrame(() => toast.classList.add("show"))
+
+    setTimeout(() => {
+        toast.classList.remove("show")
+        toast.classList.add("hide")
+        setTimeout(() => toast.remove(), 300)
+    }, duration)
+}
+
+// =========================================
+// Relative time
+// =========================================
+
+function tempoRelativo(dateStr) {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diff = Math.floor((now - date) / 1000)
+
+    if (diff < 60) return "Agora mesmo"
+    if (diff < 3600) return `Há ${Math.floor(diff / 60)} min`
+    if (diff < 86400) return `Há ${Math.floor(diff / 3600)}h`
+    if (diff < 172800) return "Ontem"
+    if (diff < 604800) return `Há ${Math.floor(diff / 86400)} dias`
+    return date.toLocaleDateString("pt-BR")
+}
+
+// =========================================
+// Animated count-up
+// =========================================
+
+function animateCount(element, target) {
+    const duration = 600
+    const start = parseInt(element.textContent) || 0
+    const diff = target - start
+    if (diff === 0) { element.textContent = target; return }
+
+    const startTime = performance.now()
+    function step(now) {
+        const elapsed = now - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        // Ease-out cubic
+        const ease = 1 - Math.pow(1 - progress, 3)
+        element.textContent = Math.round(start + diff * ease)
+        if (progress < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+}
+
+// =========================================
+// Loading skeletons
+// =========================================
+
+function showSkeletons() {
+    // Stats skeletons
+    const statIds = ["stat-total", "stat-pendente", "stat-progresso", "stat-atendido"]
+    statIds.forEach(id => {
+        const el = document.getElementById(id)
+        if (el) el.innerHTML = '<div class="skeleton skeleton-number"></div>'
+    })
+
+    // Report list skeletons
+    const listIds = ["recent-list", "my-list"]
+    listIds.forEach(id => {
+        const el = document.getElementById(id)
+        if (el) {
+            el.innerHTML = Array(3).fill(`
+                <div class="report-card skeleton-card">
+                    <div>
+                        <div class="skeleton skeleton-title"></div>
+                        <div class="skeleton skeleton-meta"></div>
+                    </div>
+                    <div class="report-card-actions">
+                        <div class="skeleton skeleton-badge"></div>
+                    </div>
+                </div>
+            `).join("")
+        }
+    })
+
+    // Bar chart skeleton
+    const barChart = document.getElementById("bar-chart")
+    if (barChart) {
+        barChart.innerHTML = Array(5).fill(`
+            <div class="bar-row">
+                <span class="bar-label"><div class="skeleton skeleton-bar-label"></div></span>
+                <div class="bar-track"><div class="skeleton skeleton-bar"></div></div>
+                <span class="bar-count"><div class="skeleton skeleton-count"></div></span>
+            </div>
+        `).join("")
+    }
+}
+
+// =========================================
+// Init
+// =========================================
 
 async function init() {
     const { data: { session } } = await client.auth.getSession()
@@ -40,9 +154,22 @@ async function init() {
         document.getElementById("nav-pref").style.display = "flex"
     }
 
-    await detectarCidade()
-    await carregarDados()
+    // Show skeletons while loading
+    showSkeletons()
+
+    // Load data in parallel
+    await Promise.all([detectarCidade(), carregarDados()])
+
+    // Setup realtime
+    setupRealtime()
+
+    // Setup search
+    setupSearch()
 }
+
+// =========================================
+// City detection (reverse geocoding)
+// =========================================
 
 async function detectarCidade() {
     const badge = document.getElementById("city-badge")
@@ -76,19 +203,33 @@ async function detectarCidade() {
     }
 }
 
-async function carregarDados() {
-    const res = await fetch(`${API_URL}/reports`)
-    allReports = await res.json()
+// =========================================
+// Load data
+// =========================================
 
-    renderStats()
-    renderBarChart()
-    renderRecentList()
-    renderMyList()
-    if (isAdmin) {
-        renderAllList()
-        renderPrefList()
+async function carregarDados() {
+    try {
+        const res = await fetch(`${API_URL}/reports`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        allReports = await res.json()
+
+        renderStats()
+        renderBarChart()
+        renderRecentList()
+        renderMyList()
+        if (isAdmin) {
+            renderAllList()
+            renderPrefList()
+        }
+    } catch (err) {
+        console.error("Erro ao carregar dados:", err)
+        showToast("Erro ao carregar dados. Verifique sua conexão.", "error")
     }
 }
+
+// =========================================
+// Stats with animated count
+// =========================================
 
 function renderStats() {
     const total = allReports.length
@@ -96,11 +237,15 @@ function renderStats() {
     const progresso = allReports.filter(r => r.status === "em_andamento").length
     const atendido = allReports.filter(r => r.status === "resolvido").length
 
-    document.getElementById("stat-total").textContent = total
-    document.getElementById("stat-pendente").textContent = pendente
-    document.getElementById("stat-progresso").textContent = progresso
-    document.getElementById("stat-atendido").textContent = atendido
+    animateCount(document.getElementById("stat-total"), total)
+    animateCount(document.getElementById("stat-pendente"), pendente)
+    animateCount(document.getElementById("stat-progresso"), progresso)
+    animateCount(document.getElementById("stat-atendido"), atendido)
 }
+
+// =========================================
+// Bar chart
+// =========================================
 
 function renderBarChart() {
     const cats = ["buraco", "iluminacao", "lixo", "alagamento", "outro"]
@@ -109,14 +254,25 @@ function renderBarChart() {
 
     document.getElementById("bar-chart").innerHTML = cats.map((c, i) => `
     <div class="bar-row">
-      <span class="bar-label">${catLabel[c]}</span>
+      <span class="bar-label">${catEmoji[c]} ${catLabel[c]}</span>
       <div class="bar-track">
-        <div class="bar-fill" style="width:${Math.round(counts[i] / max * 100)}%"></div>
+        <div class="bar-fill" style="width:0%;" data-target="${Math.round(counts[i] / max * 100)}"></div>
       </div>
       <span class="bar-count">${counts[i]}</span>
     </div>
   `).join("")
+
+    // Animate bars after render
+    requestAnimationFrame(() => {
+        document.querySelectorAll(".bar-fill").forEach(bar => {
+            bar.style.width = bar.dataset.target + "%"
+        })
+    })
 }
+
+// =========================================
+// Report lists
+// =========================================
 
 function renderRecentList() {
     const recent = [...allReports]
@@ -148,14 +304,22 @@ function renderPrefList() {
         : `<p class="empty">Nenhuma denúncia pendente.</p>`
 }
 
+// =========================================
+// Report card with emoji + relative time
+// =========================================
+
 function reportCard(r, showActions) {
-    const data = new Date(r.created_at).toLocaleDateString("pt-BR")
+    const emoji = catEmoji[r.category] || "📍"
+    const tempo = tempoRelativo(r.created_at)
     return `
     <div class="report-card" id="card-${r.id}">
-      <div>
-        <p class="report-card-title">${r.title}</p>
-        <p class="report-card-meta">${catLabel[r.category] || r.category} · ${data}</p>
-        ${r.description ? `<p class="report-card-meta" style="margin-top:4px">${r.description}</p>` : ""}
+      <div class="report-card-left">
+        <div class="report-card-emoji">${emoji}</div>
+        <div>
+          <p class="report-card-title">${r.title}</p>
+          <p class="report-card-meta">${catLabel[r.category] || r.category} · ${tempo}</p>
+          ${r.description ? `<p class="report-card-desc">${r.description}</p>` : ""}
+        </div>
       </div>
       <div class="report-card-actions">
         <span class="badge ${statusBadge[r.status]}">${statusLabel[r.status]}</span>
@@ -171,28 +335,83 @@ function reportCard(r, showActions) {
   `
 }
 
+// =========================================
+// Update status with confirmation + toast
+// =========================================
+
 async function atualizarStatus(id, novoStatus) {
-    const { data: { session } } = await client.auth.getSession()
-    await fetch(`${API_URL}/reports/${id}/status`, {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ status: novoStatus })
-    })
-    await carregarDados()
+    const label = statusLabel[novoStatus]
+    if (!confirm(`Alterar status para "${label}"?`)) {
+        // Revert select
+        await carregarDados()
+        return
+    }
+
+    try {
+        const { data: { session } } = await client.auth.getSession()
+        const res = await fetch(`${API_URL}/reports/${id}/status`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({ status: novoStatus })
+        })
+
+        if (!res.ok) throw new Error("Falha ao atualizar")
+
+        showToast(`Status alterado para "${label}"`, "success")
+        await carregarDados()
+    } catch (err) {
+        showToast("Erro ao atualizar status.", "error")
+        await carregarDados()
+    }
 }
+
+// =========================================
+// Filters
+// =========================================
 
 function filtrarDenuncias() {
     const status = document.getElementById("filter-status").value
     const cat = document.getElementById("filter-cat").value
+    const search = document.getElementById("search-all")?.value?.toLowerCase() || ""
     const filtered = allReports.filter(r =>
         (!status || r.status === status) &&
-        (!cat || r.category === cat)
+        (!cat || r.category === cat) &&
+        (!search || r.title.toLowerCase().includes(search) || (r.description || "").toLowerCase().includes(search))
     )
     renderAllList(filtered)
 }
+
+// =========================================
+// Search
+// =========================================
+
+function setupSearch() {
+    const searchInputs = document.querySelectorAll(".search-input")
+    searchInputs.forEach(input => {
+        input.addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase()
+            const section = input.dataset.section
+
+            if (section === "minhas-denuncias") {
+                const mine = allReports
+                    .filter(r => r.user_id === currentUser?.id)
+                    .filter(r => r.title.toLowerCase().includes(query) || (r.description || "").toLowerCase().includes(query))
+                document.getElementById("my-list").innerHTML = mine.length
+                    ? mine.map(r => reportCard(r, false)).join("")
+                    : `<p class="empty">Nenhuma denúncia encontrada.</p>`
+            } else if (section === "todas-denuncias") {
+                filtrarDenuncias()
+            }
+        })
+    })
+}
+
+// =========================================
+// Navigation
+// =========================================
 
 function showSection(id) {
     document.querySelectorAll(".content").forEach(el => el.classList.add("hidden"))
@@ -211,6 +430,27 @@ function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("open")
     document.getElementById("overlay").classList.toggle("open")
 }
+
+// =========================================
+// Realtime
+// =========================================
+
+function setupRealtime() {
+    client.channel("dashboard-reports")
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "reports" }, () => {
+            showToast("Nova denúncia registrada!", "info")
+            carregarDados()
+        })
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "reports" }, () => {
+            showToast("Denúncia atualizada!", "info")
+            carregarDados()
+        })
+        .subscribe()
+}
+
+// =========================================
+// Logout
+// =========================================
 
 async function logout() {
     await client.auth.signOut()

@@ -95,12 +95,18 @@
             </div>
 
             <div class="content hidden" id="content-minhas-denuncias">
+                <div class="search-bar">
+                    <input type="text" class="search-input" data-section="minhas-denuncias"
+                        placeholder="🔍 Pesquisar minhas denúncias..." />
+                </div>
                 <div class="section-title">Minhas denúncias</div>
                 <div class="report-list" id="my-list"></div>
             </div>
 
             <div class="content hidden" id="content-todas-denuncias">
                 <div class="filter-bar">
+                    <input type="text" class="search-input" id="search-all" data-section="todas-denuncias"
+                        placeholder="🔍 Pesquisar..." oninput="filtrarDenuncias()" />
                     <select id="filter-status" onchange="filtrarDenuncias()">
                         <option value="">Todos os status</option>
                         <option value="aberto">Pendente</option>
@@ -126,6 +132,9 @@
 
         </main>
     </div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="dashboard.js"></script>

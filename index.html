@@ -9,8 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <link rel="stylesheet" href="style.css" />
-
 </head>
 
 <body>
@@ -18,26 +19,39 @@
     <div id="map"></div>
     <button id="btn-denunciar" onclick="abrirModal()">+ Nova denúncia</button>
 
+    <!-- Category filter bar -->
+    <div id="filter-bar-map">
+        <button class="filter-btn" data-cat="buraco" onclick="toggleFiltro('buraco')">🕳️ Buraco</button>
+        <button class="filter-btn" data-cat="iluminacao" onclick="toggleFiltro('iluminacao')">💡 Iluminação</button>
+        <button class="filter-btn" data-cat="lixo" onclick="toggleFiltro('lixo')">🗑️ Lixo</button>
+        <button class="filter-btn" data-cat="alagamento" onclick="toggleFiltro('alagamento')">🌊 Alagamento</button>
+        <button class="filter-btn" data-cat="outro" onclick="toggleFiltro('outro')">📍 Outro</button>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
     <div id="modal">
         <div id="modal-box">
             <h2>Nova denúncia</h2>
             <input id="input-titulo" type="text" placeholder="Título (ex: Buraco na calçada)" />
             <select id="input-categoria">
-                <option value="buraco">Buraco</option>
-                <option value="iluminacao">Iluminação</option>
-                <option value="lixo">Lixo</option>
-                <option value="alagamento">Alagamento</option>
-                <option value="outro">Outro</option>
+                <option value="buraco">🕳️ Buraco</option>
+                <option value="iluminacao">💡 Iluminação</option>
+                <option value="lixo">🗑️ Lixo</option>
+                <option value="alagamento">🌊 Alagamento</option>
+                <option value="outro">📍 Outro</option>
             </select>
             <textarea id="input-descricao" placeholder="Descreva o problema..."></textarea>
             <input id="input-foto" type="file" accept="image/*" />
             <p id="status-msg"></p>
-            <button id="btn-enviar" onclick="enviarDenuncia()">Enviar</button>
+            <button id="btn-enviar" onclick="enviarDenuncia()">Enviar denúncia</button>
             <button id="btn-cancelar" onclick="fecharModal()">Cancelar</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 </body>
