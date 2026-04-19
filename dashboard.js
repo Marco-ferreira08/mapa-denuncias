@@ -8,6 +8,20 @@ let currentUser = null
 let allReports = []
 let isAdmin = false
 let userCoords = null
+let myChart = null;
+
+// =========================================
+// Service Worker Registration
+// =========================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+            console.log('[SW] Service Worker registrado com sucesso!', reg.scope);
+        }).catch((err) => {
+            console.log('[SW] Falha ao registrar Service Worker:', err);
+        });
+    });
+}
 
 // =========================================
 // Math / Distance (Haversine)
@@ -127,18 +141,6 @@ function showSkeletons() {
             `).join("")
         }
     })
-
-    // Bar chart skeleton
-    const barChart = document.getElementById("bar-chart")
-    if (barChart) {
-        barChart.innerHTML = Array(5).fill(`
-            <div class="bar-row">
-                <span class="bar-label"><div class="skeleton skeleton-bar-label"></div></span>
-                <div class="bar-track"><div class="skeleton skeleton-bar"></div></div>
-                <span class="bar-count"><div class="skeleton skeleton-count"></div></span>
-            </div>
-        `).join("")
-    }
 }
 
 // =========================================
@@ -227,33 +229,49 @@ async function detectarCidade() {
 // =========================================
 
 async function carregarDados() {
+    let data = [];
     try {
-        const res = await fetch(`${API_URL}/reports`)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const res = await fetch(`${API_URL}/reports`);
         
-        let data = await res.json()
+        // Se a SW mandou 503 (offline simulado), tratamos como erro de fetch normal
+        if (!res.ok && res.status !== 503) throw new Error(`HTTP ${res.status}`);
         
-        // Calcular distância para cada denúncia
-        if (userCoords) {
-            data = data.map(r => ({
-                ...r,
-                distancia: calcularDistancia(userCoords.lat, userCoords.lng, r.lat, r.lng)
-            }))
+        if (res.status === 503 || !res.ok) {
+            throw new Error('offline');
         }
-        
-        allReports = data
 
-        renderStats()
-        renderBarChart()
-        renderRecentList()
-        renderMyList()
-        if (isAdmin) {
-            renderAllList()
-            renderPrefList()
+        data = await res.json();
+        
+        // Salva com sucesso para uso offline futuro
+        if (window.offlineDB) {
+            await window.offlineDB.saveReportsToCache(data);
         }
     } catch (err) {
-        console.error("Erro ao carregar dados:", err)
-        showToast("Erro ao carregar dados. Verifique sua conexão.", "error")
+        console.warn("[App] API inacessível, tentando carregar cache offline...", err);
+        showToast("Você está offline. Exibindo dados em cache.", "info");
+        
+        if (window.offlineDB) {
+            data = await window.offlineDB.getCachedReports();
+        }
+    }
+
+    // Calcular distância para cada denúncia
+    if (userCoords && data.length > 0) {
+        data = data.map(r => ({
+            ...r,
+            distancia: calcularDistancia(userCoords.lat, userCoords.lng, r.lat, r.lng)
+        }))
+    }
+    
+    allReports = data
+
+    renderStats()
+    renderBarChart()
+    renderRecentList()
+    renderMyList()
+    if (isAdmin) {
+        renderAllList()
+        renderPrefList()
     }
 }
 
@@ -280,24 +298,22 @@ function renderStats() {
 function renderBarChart() {
     const cats = ["buraco", "iluminacao", "lixo", "alagamento", "outro"]
     const counts = cats.map(c => allReports.filter(r => r.category === c).length)
-    const max = Math.max(...counts, 1)
+    const labels = cats.map(c => `${catEmoji[c]} ${catLabel[c]}`)
+    
+    // Configuraçao das cores nativas que usávamos no CSS
+    const gradientColors = [
+        "rgba(249, 115, 22, 0.85)",  // Buraco (orange)
+        "rgba(59, 130, 246, 0.85)",  // Iluminação (blue)
+        "rgba(34, 197, 94, 0.85)",   // Lixo (green)
+        "rgba(6, 182, 212, 0.85)",   // Alagamento (cyan)
+        "rgba(139, 92, 246, 0.85)"   // Outro (purple)
+    ];
 
-    document.getElementById("bar-chart").innerHTML = cats.map((c, i) => `
-    <div class="bar-row">
-      <span class="bar-label">${catEmoji[c]} ${catLabel[c]}</span>
-      <div class="bar-track">
-        <div class="bar-fill" style="width:0%;" data-target="${Math.round(counts[i] / max * 100)}"></div>
-      </div>
-      <span class="bar-count">${counts[i]}</span>
-    </div>
-  `).join("")
-
-    // Animate bars after render
-    requestAnimationFrame(() => {
-        document.querySelectorAll(".bar-fill").forEach(bar => {
-            bar.style.width = bar.dataset.target + "%"
-        })
-    })
+    if (!myChart) {
+        myChart = new CanvasChart("bar-chart-canvas");
+    }
+    
+    myChart.render(counts, labels, gradientColors);
 }
 
 // =========================================
