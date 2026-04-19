@@ -108,8 +108,75 @@ function criarMarcador(categoria) {
 }
 
 // =========================================
-// Geolocation
+// Geolocation & Draggable Pin
 // =========================================
+
+let pinLocalizacao = null;
+
+async function atualizarEndereco(lat, lng) {
+    const textEl = document.getElementById("address-text");
+    const modalEl = document.getElementById("modal-endereco");
+    
+    textEl.textContent = "Buscando endereço...";
+    modalEl.textContent = "📍 Buscando...";
+
+    try {
+        const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+            { headers: { "Accept-Language": "pt-BR" } }
+        );
+        const data = await res.json();
+        
+        const road = data.address?.road;
+        const city = data.address?.city || data.address?.town || data.address?.village || data.address?.municipality || "Cidade desconhecida";
+        
+        let display = "";
+        if (road) {
+            display = `${road}, ${city}`;
+        } else if (data.display_name) {
+            const parts = data.display_name.split(",");
+            display = parts.slice(0, 2).join(",");
+        } else {
+            display = "Endereço desconhecido";
+        }
+
+        textEl.textContent = display;
+        modalEl.textContent = `📍 Local definido: ${display}`;
+    } catch (err) {
+        textEl.textContent = "Erro ao buscar endereço";
+        modalEl.textContent = "📍 Mova o pin para tentar novamente";
+        console.warn(err);
+    }
+}
+
+function inicializarPino(lat, lng) {
+    userPos = [lat, lng];
+    
+    if (!pinLocalizacao) {
+        pinLocalizacao = L.marker([lat, lng], { draggable: true }).addTo(map);
+        
+        // Show tooltip indicating it's draggable
+        pinLocalizacao.bindPopup("<b>Sua denúncia será aqui!</b><br>Você pode arrastar este pin.").openPopup();
+
+        pinLocalizacao.on("dragend", function(e) {
+            const pos = e.target.getLatLng();
+            userPos = [pos.lat, pos.lng];
+            atualizarEndereco(pos.lat, pos.lng);
+        });
+
+        // Allow clicking on map to move the pin
+        map.on("click", function(e) {
+            const pos = e.latlng;
+            userPos = [pos.lat, pos.lng];
+            pinLocalizacao.setLatLng(pos);
+            atualizarEndereco(pos.lat, pos.lng);
+        });
+    } else {
+        pinLocalizacao.setLatLng([lat, lng]);
+    }
+    
+    atualizarEndereco(lat, lng);
+}
 
 function pedirLocalizacao() {
     if (!navigator.geolocation) {
@@ -118,13 +185,17 @@ function pedirLocalizacao() {
     }
     navigator.geolocation.getCurrentPosition(
         pos => {
-            userPos = [pos.coords.latitude, pos.coords.longitude]
-            map.setView(userPos, 15)
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            map.flyTo([lat, lng], 16, { duration: 1.5 });
+            inicializarPino(lat, lng);
         },
         erro => {
             if (erro.code === 1) {
-                showToast("Permissão de localização negada. Ative nas configurações para registrar denúncias.", "warning", 5000)
+                showToast("Permissão de localização negada. O pin foi colocado no centro.", "warning", 5000);
             }
+            // Fallback location (center of the initialized map)
+            inicializarPino(-23.55, -46.63);
         },
         { enableHighAccuracy: true, timeout: 10000 }
     )

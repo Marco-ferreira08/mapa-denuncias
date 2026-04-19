@@ -102,6 +102,41 @@ body {
     transform: translateY(-2px);
 }
 
+#address-bar {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 12px 18px;
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    max-width: calc(100vw - 260px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all var(--transition-normal);
+}
+
+@media (max-width: 600px) {
+    #address-bar {
+        top: 60px;
+        left: 16px;
+        right: 16px;
+        max-width: none;
+        text-align: center;
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+}
+
 /* =========================================
    MODAL OVERLAY
    ========================================= */

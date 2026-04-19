@@ -7,6 +7,23 @@ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 let currentUser = null
 let allReports = []
 let isAdmin = false
+let userCoords = null
+
+// =========================================
+// Math / Distance (Haversine)
+// =========================================
+
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371; // radius of Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
 
 const ADMINS = ["ferreiramarcoantonio904@gmail.com"]
 
@@ -184,6 +201,8 @@ async function detectarCidade() {
         })
 
         const { latitude, longitude } = pos.coords
+        userCoords = { lat: latitude, lng: longitude }
+
         const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
             { headers: { "Accept-Language": "pt-BR" } }
@@ -211,7 +230,18 @@ async function carregarDados() {
     try {
         const res = await fetch(`${API_URL}/reports`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        allReports = await res.json()
+        
+        let data = await res.json()
+        
+        // Calcular distância para cada denúncia
+        if (userCoords) {
+            data = data.map(r => ({
+                ...r,
+                distancia: calcularDistancia(userCoords.lat, userCoords.lng, r.lat, r.lng)
+            }))
+        }
+        
+        allReports = data
 
         renderStats()
         renderBarChart()
@@ -311,13 +341,17 @@ function renderPrefList() {
 function reportCard(r, showActions) {
     const emoji = catEmoji[r.category] || "📍"
     const tempo = tempoRelativo(r.created_at)
+    const distText = r.distancia !== undefined && r.distancia !== null 
+        ? ` · 📍 a ${r.distancia.toFixed(1)} km` 
+        : ""
+
     return `
     <div class="report-card" id="card-${r.id}">
       <div class="report-card-left">
         <div class="report-card-emoji">${emoji}</div>
         <div>
           <p class="report-card-title">${r.title}</p>
-          <p class="report-card-meta">${catLabel[r.category] || r.category} · ${tempo}</p>
+          <p class="report-card-meta">${catLabel[r.category] || r.category} · ${tempo}${distText}</p>
           ${r.description ? `<p class="report-card-desc">${r.description}</p>` : ""}
         </div>
       </div>
@@ -375,12 +409,21 @@ async function atualizarStatus(id, novoStatus) {
 function filtrarDenuncias() {
     const status = document.getElementById("filter-status").value
     const cat = document.getElementById("filter-cat").value
+    const sort = document.getElementById("sort-by")?.value || "recent"
     const search = document.getElementById("search-all")?.value?.toLowerCase() || ""
-    const filtered = allReports.filter(r =>
+    
+    let filtered = allReports.filter(r =>
         (!status || r.status === status) &&
         (!cat || r.category === cat) &&
         (!search || r.title.toLowerCase().includes(search) || (r.description || "").toLowerCase().includes(search))
     )
+
+    if (sort === "distance" && userCoords) {
+        filtered.sort((a, b) => a.distancia - b.distancia)
+    } else {
+        filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    }
+
     renderAllList(filtered)
 }
 

@@ -16,6 +16,7 @@
 
 <body>
     <a href="dashboard.html" id="btn-dashboard" style="display:none;">Dashboard</a>
+    <div id="address-bar">📍 <span id="address-text">Buscando sua localização...</span></div>
     <div id="map"></div>
     <button id="btn-denunciar" onclick="abrirModal()">+ Nova denúncia</button>
 
@@ -34,6 +35,7 @@
     <div id="modal">
         <div id="modal-box">
             <h2>Nova denúncia</h2>
+            <p id="modal-endereco" style="font-size: 13px; color: var(--text-muted); background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 4px;">📍 Arraste o pin no mapa para definir o local</p>
             <input id="input-titulo" type="text" placeholder="Título (ex: Buraco na calçada)" />
             <select id="input-categoria">
                 <option value="buraco">🕳️ Buraco</option>

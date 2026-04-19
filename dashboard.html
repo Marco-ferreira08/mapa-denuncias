@@ -107,6 +107,10 @@
                 <div class="filter-bar">
                     <input type="text" class="search-input" id="search-all" data-section="todas-denuncias"
                         placeholder="🔍 Pesquisar..." oninput="filtrarDenuncias()" />
+                    <select id="sort-by" onchange="filtrarDenuncias()">
+                        <option value="recent">📅 Mais recentes</option>
+                        <option value="distance">📍 Mais próximos a mim</option>
+                    </select>
                     <select id="filter-status" onchange="filtrarDenuncias()">
                         <option value="">Todos os status</option>
                         <option value="aberto">Pendente</option>
