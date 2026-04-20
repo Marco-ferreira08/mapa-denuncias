@@ -1,6 +1,4 @@
-// =========================================
 // Gerenciador Local Offline via IndexedDB
-// =========================================
 
 const DB_NAME = "mapaDenunciasDB";
 const DB_VERSION = 1;
@@ -41,9 +39,7 @@ class OfflineStorage {
         });
     }
 
-    // ===============================================
     // Operações para CACHE DE LEITURA
-    // ===============================================
 
     async saveReportsToCache(reports) {
         if (!this.db) await this.init();
@@ -73,17 +69,14 @@ class OfflineStorage {
         });
     }
 
-    // ===============================================
-    // Operações para FILA DE SINCRONIZAÇÃO (OFFLINE SEND)
-    // ===============================================
-
+       // Operações para FILA DE SINCRONIZAÇÃO (OFFLINE SEND)
+   
     async addToSyncQueue(reportPayload) {
         if (!this.db) await this.init();
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['sync_queue'], 'readwrite');
             const store = transaction.objectStore('sync_queue');
             
-            // Adicionamos a data como identificador local temporário
             const request = store.add({
                 ...reportPayload,
                 timestamp: new Date().getTime(),
