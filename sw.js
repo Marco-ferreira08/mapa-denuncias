@@ -18,9 +18,8 @@ const ASSETS_TO_CACHE = [
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
 ];
 
-// =========================================
 // Instalação do Service Worker
-// =========================================
+
 self.addEventListener('install', (event) => {
     // Força o SW a se tornar ativo imediatamente
     self.skipWaiting();
@@ -33,9 +32,8 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// =========================================
 // Ativação e Limpeza de caches antigos
-// =========================================
+
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keyList) => {
@@ -51,9 +49,8 @@ self.addEventListener('activate', (event) => {
     return self.clients.claim();
 });
 
-// =========================================
 // Interceptação de Requisições (Network First, fallback to Cache)
-// =========================================
+
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
@@ -96,9 +93,8 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
-// =========================================
-// Sincronização em Background (Se suportado pelo navegador)
-// =========================================
+// Sincronização em Background 
+
 self.addEventListener('sync', (event) => {
     if (event.tag === 'sync-denuncias') {
         console.log('[ServiceWorker] Sync ativado! Tentando enviar dados pendentes...');
